@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 #-*-coding:Utf-8 -*
 
+from os.path import normpath
 import os
 import sys
 import fnmatch
@@ -20,6 +21,7 @@ class modelViewer():
         Init the modelViewer with the good scanner,
         colors, dot file, etc.
         """
+        self.basepath = None
         self.scanner = scanner
         self.ext = validExt
         self.dot = open(dotName, 'w')
@@ -41,6 +43,8 @@ class modelViewer():
         Parse files and subdirectories from the @path given
         as argument. Result will be added in the dot file.
         """
+        self.basepath = normpath(path)
+        print(self.basepath)
         current = os.getcwd()
         os.chdir(path)
         self.setColor(os.getcwd())
@@ -89,21 +93,20 @@ class modelViewer():
                 for ext in self.ext:
                     if fnmatch.fnmatch(f, ext):
                         self.fileCount += 1
-                        self.parseFile(f)
+                        self.parseFile(f, os.getcwd())
 
 
 
-    def parseFile(self, filePath):
+    def parseFile(self, filePath, dirpath):
         """
         Parse the file @filePath using the current scanner.
         Write the edges to the dot file.
         """
-        self.scanner.beginFile(filePath)
+        self.scanner.beginFile(filePath, self.basepath, dirpath)
 
         # Parse file
-        f = open(filePath, 'r')
-        self.scanner.scanFile(f)
-        f.close()
+        with open(filePath, 'r') as f:
+            self.scanner.scanFile(f, dirpath, self.basepath)
 
         for u, v, info in self.scanner.getEdges():
             self.dotAddEdge(u, v, info)
